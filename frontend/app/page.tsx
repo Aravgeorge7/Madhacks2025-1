@@ -116,62 +116,63 @@ export default function Home() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {claims.map((claim: Claim) => (
-                <tr
-                  key={claim.id}
-                  className="transition-colors hover:bg-slate-50"
-                >
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-slate-900">
-                      {claim.claimantName}
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {claim.policyNumber}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-700">
-                    {claim.incidentType}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-700">
-                    {formatDate(claim.incidentDate)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: claim.urgency }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className="h-4 w-4 fill-amber-400 text-amber-400"
-                        />
-                      ))}
-                      <span className="ml-1 text-sm text-slate-600">
-                        {claim.urgency}
+                  <tr
+                    key={claim.id}
+                    className="transition-colors hover:bg-slate-50"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="text-sm font-medium text-slate-900">
+                        {claim.claimantName}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {claim.policyNumber}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-700">
+                      {claim.incidentType}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-700">
+                      {claim.incidentDate ? formatDate(claim.incidentDate) : "N/A"}
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: claim.urgency || 1 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            className="h-4 w-4 fill-amber-400 text-amber-400"
+                          />
+                        ))}
+                        <span className="ml-1 text-sm text-slate-600">
+                          {claim.urgency || 1}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getRiskBadgeColor(claim.riskScore)}`}
+                      >
+                        {claim.riskScore}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getRiskBadgeColor(claim.riskScore)}`}
-                    >
-                      {claim.riskScore}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-800">
-                      {claim.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    {claim.riskScore > 70 && (
-                      <button className="rounded-md bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800">
-                        View Graph
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-800">
+                        {claim.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {claim.riskScore > 70 && (
+                        <button className="rounded-md bg-slate-900 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-slate-800">
+                          View Graph
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
