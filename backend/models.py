@@ -66,7 +66,7 @@ class ClaimFormData(BaseModel):
     photos: Optional[str] = Field(None, description="URL to photos")
     
     # Status
-    status: Optional[str] = Field("pending", description="Claim status")
+    status: Optional[str] = Field("unsettled", description="Claim status")
     
     # Legacy fields (for backward compatibility)
     claimant_name: Optional[str] = Field(None, description="Name of claimant (legacy)")

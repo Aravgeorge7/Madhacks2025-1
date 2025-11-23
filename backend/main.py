@@ -720,7 +720,7 @@ async def create_claim(
             repair_shop_name=claim_data.repair_shop_name,
             reported_by=claim_data.reported_by,
             photos_url=claim_data.photos,
-            status=claim_data.status or "pending",
+            status=claim_data.status or "unsettled",
             risk_score=graph_result["risk_score"],
             risk_category=graph_result["risk_category"],
             fraud_nlp_score=graph_result.get("fraud_nlp_score", 0),

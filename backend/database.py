@@ -73,7 +73,7 @@ class Claim(Base):
     photos_url = Column(Text)  # URL to image
     photos_local_path = Column(String)  # Local path after download
     fraud_label = Column(Integer, default=0)  # 0 or 1
-    status = Column(String, default="pending")
+    status = Column(String, default="unsettled")
     
     # Legacy fields (kept for compatibility)
     claimant_name = Column(String, index=True)
