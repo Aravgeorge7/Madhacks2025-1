@@ -3,6 +3,7 @@
 import { MOCK_CLAIMS } from "@/data/mockClaims";
 import { Claim } from "@/types/claim";
 import { Star } from "lucide-react";
+import Link from "next/link";
 
 function getRiskBadgeColor(riskScore: number): string {
   if (riskScore < 30) {
@@ -26,21 +27,19 @@ function formatDate(dateString: string): string {
 export default function Home() {
   return (
     <div className="h-full overflow-auto p-8">
-      <h1 className="mb-6 text-3xl font-bold text-slate-900">
-        RiskChain Intelligence
-      </h1>
-      
-      {/* Embedded Claim Submission Form from Backend */}
-      <div className="mb-8">
-        <iframe
-          src="http://localhost:8000/"
-          className="w-full border-0 rounded-lg shadow-lg"
-          style={{ minHeight: "1200px", height: "auto" }}
-          title="Insurance Claim Submission Form"
-        />
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-slate-900">
+          RiskChain Intelligence
+        </h1>
+        <Link
+          href="/form"
+          className="px-6 py-3 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors font-medium"
+        >
+          Submit New Claim
+        </Link>
       </div>
       
-      <h2 className="mb-6 text-2xl font-bold text-slate-900 mt-8">
+      <h2 className="mb-6 text-2xl font-bold text-slate-900">
         Incoming Claims
       </h2>
       <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
