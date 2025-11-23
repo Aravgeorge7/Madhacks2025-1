@@ -92,17 +92,36 @@ class RiskModel:
         for col in numeric_cols:
             if col not in df.columns:
                 df[col] = 0
+        # Columns that commonly have NaN in training data (from CSV's "None" values)
+        nan_allowed_cols = {"lawyer_name", "medical_provider_name"}
+
         for col in categorical_cols:
             if col not in df.columns:
-                df[col] = "unknown"
+                # Only use NaN for columns that had NaN during training
+                df[col] = np.nan if col in nan_allowed_cols else "unknown"
+            else:
+                if col in nan_allowed_cols:
+                    # Replace "unknown", "None", empty strings with NaN for consistency with training
+                    df[col] = df[col].replace({"unknown": np.nan, "None": np.nan, "": np.nan, "nan": np.nan})
 
         return df, numeric_cols, categorical_cols
 
     def _encode_text(self, descriptions: List[str], fit: bool) -> pd.DataFrame:
+        # If we need transformer embeddings (either fitting with embedder or model expects them)
         if self.embedder is not None:
             embeddings = self.embedder.encode(descriptions)
             return pd.DataFrame(embeddings, columns=[f"text_emb_{i}" for i in range(embeddings.shape[1])])
 
+        # If model was trained with transformer but embedder is not available,
+        # output zeros with correct column names for alignment
+        if self.text_encoder_type == "transformer" and not fit:
+            # all-MiniLM-L6-v2 produces 384-dimensional embeddings
+            n_dims = 384
+            zeros = np.zeros((len(descriptions), n_dims))
+            print(f"WARNING: Using zero embeddings for {len(descriptions)} descriptions (transformer unavailable)")
+            return pd.DataFrame(zeros, columns=[f"text_emb_{i}" for i in range(n_dims)])
+
+        # Fall back to TF-IDF for training without transformer or if explicitly using tfidf
         if self.text_vectorizer is None:
             self.text_vectorizer = TfidfVectorizer(max_features=256, ngram_range=(1, 2))
 
@@ -291,11 +310,27 @@ class RiskModel:
         self.model = data["model"]
         self.preprocessor = data["preprocessor"]
         self.text_vectorizer = data.get("text_vectorizer")
-        self.text_encoder_type = data.get("text_encoder_type", "transformer")
+        saved_encoder_type = data.get("text_encoder_type", "transformer")
         with open(feature_path, "r", encoding="utf-8") as f:
             meta = json.load(f)
             self.feature_columns = meta["columns"]
-            self.text_encoder_type = meta.get("text_encoder_type", self.text_encoder_type)
+            saved_encoder_type = meta.get("text_encoder_type", saved_encoder_type)
+
+        # Validate text encoder compatibility
+        if saved_encoder_type == "transformer" and self.embedder is None:
+            print("WARNING: Model was trained with transformer embeddings but SentenceTransformer is not available!")
+            print("Attempting to load SentenceTransformer...")
+            try:
+                from sentence_transformers import SentenceTransformer
+                self.embedder = SentenceTransformer("all-MiniLM-L6-v2")
+                self.text_encoder_type = "transformer"
+                print("✅ Successfully loaded SentenceTransformer")
+            except Exception as e:
+                print(f"❌ Failed to load SentenceTransformer: {e}")
+                print("Predictions may be inaccurate due to text encoder mismatch!")
+                self.text_encoder_type = saved_encoder_type  # Keep the saved type for feature alignment
+        else:
+            self.text_encoder_type = saved_encoder_type
 
     # ------------------------------------------------------------------ #
     # Helpers

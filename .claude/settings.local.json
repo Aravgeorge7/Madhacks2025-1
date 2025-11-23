@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(source:*)",
+      "Bash(brew install:*)",
+      "Bash(python test_single_claim.py:*)",
+      "Bash(python:*)",
+      "Bash(git restore:*)",
+      "Bash(npx tsc:*)",
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

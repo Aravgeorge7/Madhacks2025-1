@@ -24,11 +24,12 @@ class ClaimDataset:
 
 
 def train_model(
-    real_data_path: str = "car_insurance_dataset_augmented.csv", #"car_insurance_training_dataset-1.csv",
+    real_data_path: str = "../car_insurance_training_dataset_with_images.csv",
     artifacts_dir: str = "artifacts",
+    augment_with_synthetic: bool = True,
 ) -> Dict[str, float]:
     """
-    End-to-end training: load real data (no synthetic augmentation),
+    End-to-end training: load real data and optionally augment with synthetic fraud,
     build graph, train model, return validation metrics.
     """
     base_dir = Path(__file__).resolve().parent
@@ -36,7 +37,18 @@ def train_model(
     if not data_path.is_absolute():
         data_path = base_dir / data_path
 
+    from synthetic_data import generate_synthetic_claims
+
     real_df = load_real_claims(str(data_path))
+
+    # If real data has no fraud, augment with synthetic fraud examples
+    if augment_with_synthetic and real_df["fraud_label"].sum() == 0:
+        print("Real data has no fraud examples, augmenting with synthetic data...")
+        # Generate synthetic fraud and non-fraud claims
+        synthetic_df = generate_synthetic_claims(normal=100, suspicious=80, organized_rings=5)
+        # Combine real (non-fraud) with synthetic
+        real_df = pd.concat([real_df, synthetic_df], ignore_index=True)
+        print(f"Combined dataset: {len(real_df)} claims, {real_df['fraud_label'].sum()} fraud")
 
     # Shuffle for randomness
     df = real_df.sample(frac=1, random_state=42).reset_index(drop=True)

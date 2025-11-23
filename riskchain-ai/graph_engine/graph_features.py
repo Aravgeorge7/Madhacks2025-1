@@ -12,6 +12,8 @@ class GraphFeatures:
     def __init__(self, graph_engine):
         self.engine = graph_engine
         self.G = graph_engine.G
+        # Count claim nodes (not entity nodes)
+        self._claim_count = sum(1 for n, d in self.G.nodes(data=True) if d.get("type") == "claim")
         self._degree_centrality = nx.degree_centrality(self.G) if self.G.number_of_nodes() else {}
         self._betweenness = nx.betweenness_centrality(self.G) if self.G.number_of_nodes() else {}
         self._components = list(nx.connected_components(self.G))
@@ -39,13 +41,18 @@ class GraphFeatures:
 
     def compute_features_for_claims(self, claims: List[dict]) -> pd.DataFrame:
         rows = []
+        # When graph has very few claims, centrality metrics are unreliable
+        # Use 0.0 (default/missing value) to avoid extreme values
+        use_centrality = self._claim_count >= 5
+
         for claim in claims:
             cid = claim["claim_id"]
             rows.append(
                 {
                     "claim_id": cid,
-                    "graph_degree_centrality": self._degree_centrality.get(cid, 0.0),
-                    "graph_betweenness": self._betweenness.get(cid, 0.0),
+                    # Only use centrality when graph has enough claims
+                    "graph_degree_centrality": self._degree_centrality.get(cid, 0.0) if use_centrality else 0.0,
+                    "graph_betweenness": self._betweenness.get(cid, 0.0) if use_centrality else 0.0,
                     "graph_cluster": self._component_labels.get(cid, -1),
                     "shared_ips": self._shared_entity_count(cid, "ip"),
                     "shared_doctors": self._shared_entity_count(cid, "provider"),

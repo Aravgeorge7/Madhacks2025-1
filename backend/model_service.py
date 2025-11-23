@@ -131,9 +131,14 @@ class ModelService:
             # Get model prediction
             if self.model and self.model.model:
                 try:
+                    # Ensure graph_engine is available for graph features
+                    if not self.graph_engine and all_claims:
+                        self.build_graph_from_claims(all_claims)
+                    
                     model_scores = self.model.predict_proba([model_claim], graph_engine=self.graph_engine)
                     model_score = float(model_scores[0]) if model_scores and len(model_scores) > 0 else 0.5
-                    print(f"Model prediction for {model_claim.get('claim_id')}: {model_score}")
+                    # Debug: print first few claim fields to verify they're different
+                    print(f"Model prediction for {model_claim.get('claim_id')}: {model_score:.4f} ({model_score*100:.2f}%) - age={model_claim.get('claimant_age')}, prev={model_claim.get('previous_claims_count')}, vehicle={model_claim.get('vehicle_make')} {model_claim.get('vehicle_year')}, provider={model_claim.get('medical_provider_name')[:15] if model_claim.get('medical_provider_name') and model_claim.get('medical_provider_name') != 'unknown' else 'None'}")
                 except Exception as pred_error:
                     print(f"Error in model prediction: {pred_error}")
                     import traceback
@@ -182,7 +187,10 @@ class ModelService:
             
             # Calculate final score (0-100)
             # Model contributes 70%, graph risk contributes 20%, rules contribute 10%
-            final_score = min(100.0, (model_score * 70) + (graph_risk / 30.0 * 20) + rule_adj)
+            # model_score is already a probability [0,1], so multiply by 70 to get contribution
+            model_contribution = model_score * 70
+            graph_contribution = (graph_risk / 30.0) * 20 if graph_risk > 0 else 0
+            final_score = min(100.0, model_contribution + graph_contribution + rule_adj)
             
             # Determine risk category
             if final_score >= 70:
@@ -232,43 +240,63 @@ class ModelService:
             except:
                 pass
         
-        # Build model claim dict
+        # Build model claim dict - preserve actual values, only default when truly missing
+        # Helper to get value with proper handling of None/empty
+        def get_val(key, default=None, convert_int=False, convert_float=False):
+            val = claim.get(key)
+            if val is None:
+                return default
+            if val == "" or (isinstance(val, str) and val.lower() == "none"):
+                return default
+            if convert_int:
+                try:
+                    return int(val)
+                except (ValueError, TypeError):
+                    return default
+            if convert_float:
+                try:
+                    return float(val)
+                except (ValueError, TypeError):
+                    return default
+            return val
+        
         model_claim = {
-            "claim_id": claim.get("claim_id", ""),
+            "claim_id": get_val("claim_id", ""),
             "claim_submission_date": claim_submission_date or "",
             "accident_date": accident_date or "",
-            "accident_time": claim.get("accident_time", ""),
-            "accident_location_city": claim.get("accident_location_city", ""),
-            "accident_location_state": claim.get("accident_location_state", ""),
-            "accident_description": claim.get("accident_description", "") or "",
-            "police_report_filed": int(claim.get("police_report_filed", 0) or 0),
-            "loss_type": claim.get("loss_type", ""),
-            "claimant_name": claim.get("claimant_name", ""),
-            "claimant_age": int(claim.get("claimant_age", 0) or 0),
-            "claimant_gender": claim.get("claimant_gender", ""),
-            "claimant_city": claim.get("claimant_city", ""),
-            "claimant_state": claim.get("claimant_state", ""),
-            "vehicle_make": claim.get("vehicle_make", ""),
-            "vehicle_model": claim.get("vehicle_model", ""),
-            "vehicle_year": int(claim.get("vehicle_year", 0) or 0),
-            "vehicle_use_type": claim.get("vehicle_use_type", ""),
-            "vehicle_mileage": int(claim.get("vehicle_mileage", 0) or 0),
-            "damage_severity": claim.get("damage_severity", ""),
-            "injury_severity": claim.get("injury_severity", ""),
-            "medical_treatment_received": int(claim.get("medical_treatment_received", 0) or 0),
-            "medical_cost_estimate": float(claim.get("medical_cost_estimate", 0) or 0),
-            "airbags_deployed": int(claim.get("airbags_deployed", 0) or 0),
-            "policy_tenure_months": int(claim.get("policy_tenure_months", 0) or 0),
-            "coverage_type": claim.get("coverage_type", ""),
-            "policy_type": claim.get("policy_type", ""),
-            "deductible_amount": float(claim.get("deductible_amount", 0) or 0),
-            "previous_claims_count": int(claim.get("previous_claims_count", 0) or 0),
-            "lawyer_name": claim.get("lawyer_name", ""),
-            "medical_provider_name": claim.get("medical_provider_name", ""),
-            "repair_shop_name": claim.get("repair_shop_name", ""),
-            "reported_by": claim.get("reported_by", ""),
-            "ip_address": claim.get("ip_address", ""),
-            "claim_amount": float(claim.get("medical_cost_estimate", 0) or 0) * 1.5,  # Estimate
+            "accident_time": get_val("accident_time", ""),
+            "accident_location_city": get_val("accident_location_city", ""),
+            "accident_location_state": get_val("accident_location_state", ""),
+            "accident_description": get_val("accident_description", "") or "",
+            "police_report_filed": get_val("police_report_filed", 0, convert_int=True),
+            "loss_type": get_val("loss_type", "unknown"),
+            "claimant_name": get_val("claimant_name", ""),
+            "claimant_age": get_val("claimant_age", 0, convert_int=True),
+            "claimant_gender": get_val("claimant_gender", "unknown"),
+            "claimant_city": get_val("claimant_city", ""),
+            "claimant_state": get_val("claimant_state", "unknown"),
+            "vehicle_make": get_val("vehicle_make", "unknown"),
+            "vehicle_model": get_val("vehicle_model", "unknown"),
+            "vehicle_year": get_val("vehicle_year", 0, convert_int=True),
+            "vehicle_use_type": get_val("vehicle_use_type", "unknown"),
+            "vehicle_mileage": get_val("vehicle_mileage", 0, convert_int=True),
+            "damage_severity": get_val("damage_severity", "unknown"),
+            "injury_severity": get_val("injury_severity", "unknown"),
+            "medical_treatment_received": get_val("medical_treatment_received", 0, convert_int=True),
+            "medical_cost_estimate": get_val("medical_cost_estimate", 0.0, convert_float=True),
+            "airbags_deployed": get_val("airbags_deployed", 0, convert_int=True),
+            "policy_tenure_months": get_val("policy_tenure_months", 0, convert_int=True),
+            "coverage_type": get_val("coverage_type", "unknown"),
+            "policy_type": get_val("policy_type", "unknown"),
+            "deductible_amount": get_val("deductible_amount", 0.0, convert_float=True),
+            "previous_claims_count": get_val("previous_claims_count", 0, convert_int=True),
+            "lawyer_name": get_val("lawyer_name", "unknown"),
+            "medical_provider_name": get_val("medical_provider_name", "unknown"),
+            "repair_shop_name": get_val("repair_shop_name", ""),
+            "reported_by": get_val("reported_by", ""),
+            "ip_address": get_val("ip_address", ""),
+            # Calculate claim_amount from medical_cost_estimate or use a default based on damage
+            "claim_amount": float(get_val("medical_cost_estimate", 0) or 0) * 1.5 if get_val("medical_cost_estimate") else (10000.0 if get_val("damage_severity") in ["major", "total_loss"] else 5000.0),
         }
         
         return model_claim

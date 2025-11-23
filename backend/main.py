@@ -13,6 +13,7 @@ from datetime import datetime
 from database import init_db, get_db, Claim
 from models import ClaimFormData, ClaimResponse
 from graph_service import RiskGraph
+from model_service import get_model_service
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -35,6 +36,9 @@ init_db()
 
 # Initialize graph service (singleton)
 risk_graph = RiskGraph()
+
+# Initialize model service (singleton)
+model_service = get_model_service()
 
 
 @app.on_event("startup")
@@ -557,6 +561,110 @@ async def root():
         </div>
         
         <script>
+            // Pre-fill form if data is provided in URL
+            function prefillForm() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const prefillData = urlParams.get('prefill');
+                
+                if (prefillData) {
+                    try {
+                        const data = JSON.parse(decodeURIComponent(prefillData));
+                        console.log('Pre-filling form with:', data);
+                        
+                        // Map data fields to form fields - handle both camelCase and snake_case
+                        const setValue = (fieldName, value) => {
+                            const field = document.getElementById(fieldName) || document.querySelector(`[name="${fieldName}"]`);
+                            if (field && value !== undefined && value !== null && value !== '') {
+                                // Handle dates - strip time portion
+                                if (fieldName.includes('date') && typeof value === 'string') {
+                                    field.value = value.split('T')[0];
+                                } else {
+                                    field.value = value;
+                                }
+                            }
+                        };
+                        
+                        // Fill in all possible fields
+                        setValue('claimant_name', data.claimantName || data.claimant_name);
+                        setValue('policy_number', data.policyNumber || data.policy_number);
+                        setValue('claim_submission_date', data.claim_submission_date);
+                        setValue('accident_date', data.accident_date || data.incidentDate);
+                        setValue('accident_time', data.accident_time);
+                        setValue('accident_location_city', data.accident_location_city || data.claimant_city);
+                        setValue('accident_location_state', data.accident_location_state || data.claimant_state);
+                        setValue('accident_description', data.accident_description || data.description);
+                        setValue('police_report_filed', data.police_report_filed);
+                        setValue('loss_type', data.loss_type || data.incidentType);
+                        setValue('claimant_age', data.claimant_age);
+                        setValue('claimant_gender', data.claimant_gender);
+                        setValue('claimant_city', data.claimant_city);
+                        setValue('claimant_state', data.claimant_state);
+                        setValue('vehicle_make', data.vehicle_make);
+                        setValue('vehicle_model', data.vehicle_model);
+                        setValue('vehicle_year', data.vehicle_year);
+                        setValue('vehicle_use_type', data.vehicle_use_type);
+                        setValue('vehicle_mileage', data.vehicle_mileage);
+                        setValue('damage_severity', data.damage_severity);
+                        setValue('injury_severity', data.injury_severity);
+                        setValue('medical_treatment_received', data.medical_treatment_received);
+                        setValue('medical_cost_estimate', data.medical_cost_estimate);
+                        setValue('airbags_deployed', data.airbags_deployed);
+                        setValue('policy_tenure_months', data.policy_tenure_months);
+                        setValue('coverage_type', data.coverage_type);
+                        setValue('policy_type', data.policy_type);
+                        setValue('deductible_amount', data.deductible_amount);
+                        setValue('previous_claims_count', data.previous_claims_count);
+                        setValue('lawyer_name', data.lawyer_name);
+                        setValue('medical_provider_name', data.medical_provider_name);
+                        setValue('repair_shop_name', data.repair_shop_name);
+                        setValue('reported_by', data.reported_by);
+                        setValue('ip_address', data.ip_address);
+                        
+                        // Make form read-only
+                        const form = document.getElementById('claimForm');
+                        if (form) {
+                            // Disable all input fields
+                            const inputs = form.querySelectorAll('input, select, textarea');
+                            inputs.forEach(input => {
+                                input.setAttribute('readonly', true);
+                                input.setAttribute('disabled', true);
+                                input.style.backgroundColor = '#f5f5f5';
+                                input.style.cursor = 'not-allowed';
+                            });
+                            
+                            // Hide submit button
+                            const submitBtn = form.querySelector('button[type="submit"]');
+                            if (submitBtn) {
+                                submitBtn.style.display = 'none';
+                            }
+                            
+                            // Add read-only notice
+                            const submitSection = form.querySelector('.submit-section');
+                            if (submitSection) {
+                                submitSection.innerHTML = '<p style="text-align: center; color: #666; font-size: 14px; padding: 20px; background: #f8f9fa; border-radius: 4px;"><strong>Read-Only View</strong><br>This claim has already been submitted and cannot be modified.</p>';
+                            }
+                        }
+                        
+                        // Update header to indicate viewing mode
+                        const header = document.querySelector('.header h1');
+                        if (header) {
+                            header.textContent = 'View Submitted Claim';
+                            header.style.background = 'linear-gradient(135deg, #2d5016 0%, #4a7c2e 100%)';
+                        }
+                        const subtitle = document.querySelector('.header .subtitle');
+                        if (subtitle) {
+                            subtitle.textContent = 'Read-Only - Claim Already Submitted';
+                        }
+                        
+                    } catch (error) {
+                        console.error('Error pre-filling form:', error);
+                    }
+                }
+            }
+            
+            // Call prefill when page loads
+            window.addEventListener('DOMContentLoaded', prefillForm);
+            
             document.getElementById('claimForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
@@ -656,12 +764,20 @@ async def create_claim(
         claim_json = claim_data.model_dump()
         
         # Prepare data for graph processing (use new field names)
+        # Generate unique IP if not provided to avoid false fraud ring detection
+        import hashlib
+        unique_ip = claim_data.ip_address
+        if not unique_ip:
+            # Generate a unique IP based on claim_id to avoid false positives
+            ip_hash = hashlib.md5(claim_id.encode()).hexdigest()[:8]
+            unique_ip = f"10.{int(ip_hash[:2], 16) % 256}.{int(ip_hash[2:4], 16) % 256}.{int(ip_hash[4:6], 16) % 256}"
+
         graph_claim_data = {
             "claim_id": claim_id,
             "claimant_name": claim_data.claimant_name or f"{claim_data.claimant_city or 'Unknown'} Claimant",
             "doctor": claim_data.medical_provider_name or claim_data.doctor or "None",
             "lawyer": claim_data.lawyer_name or claim_data.lawyer or "None",
-            "ip_address": claim_data.ip_address or "192.168.1.100",  # Default if not provided
+            "ip_address": unique_ip,
             "missing_docs": [] if claim_data.police_report_filed else ['police_report'],
             "fraud_nlp_score": 0  # Will be updated when AI processing is added
         }
@@ -729,7 +845,7 @@ async def create_claim(
             claimant_name=claim_data.claimant_name or f"{claim_data.claimant_city or 'Unknown'} Claimant",
             doctor=claim_data.medical_provider_name or claim_data.doctor,
             lawyer=claim_data.lawyer_name or claim_data.lawyer,
-            ip_address=claim_data.ip_address or "192.168.1.100",
+            ip_address=unique_ip,  # Use the unique IP generated above
             accident_type=claim_data.loss_type or claim_data.accident_type,
             claim_date=accident_date or claim_submission_date or datetime.utcnow(),
             missing_docs=claim_data.missing_docs or []
@@ -754,11 +870,24 @@ async def create_claim(
         raise HTTPException(status_code=500, detail=f"Error creating claim: {str(e)}")
 
 
+@app.get("/api/claims/{claim_id}")
+async def get_claim_by_id(
+    claim_id: int,
+    db: Session = Depends(get_db)
+):
+    """Get a single claim by its database ID."""
+    claim = db.query(Claim).filter(Claim.id == claim_id).first()
+    if not claim:
+        raise HTTPException(status_code=404, detail="Claim not found")
+    return claim.to_dict()
+
+
 @app.get("/api/claims")
 async def get_claims(
     skip: int = 0,
     limit: int = 100,
     status: Optional[str] = None,
+    include_model_scores: bool = True,
     db: Session = Depends(get_db)
 ):
     """Get claims with pagination and optional status filter."""
@@ -770,13 +899,126 @@ async def get_claims(
     else:
         # Default: get pending or unsettled claims
         query = query.filter(
-            (Claim.status == "pending") | 
-            (Claim.status == "unsettled") |
+            (Claim.status == "unsettled") | 
+            (Claim.status == "pending") |
             (Claim.status == None)
         )
     
     claims = query.order_by(Claim.created_at.desc()).offset(skip).limit(limit).all()
-    return [claim.to_dict() for claim in claims]
+    
+    # Convert to dicts
+    claim_dicts = [claim.to_dict() for claim in claims]
+    
+    # Add model scores if requested
+    if include_model_scores and claims:
+        try:
+            # Get all claims for graph building
+            all_claims_query = db.query(Claim).filter(
+                (Claim.status == "unsettled") | 
+                (Claim.status == "pending") |
+                (Claim.status == None)
+            )
+            all_claims = all_claims_query.all()
+            
+            # Build graph from all claims
+            all_claims_data = []
+            for c in all_claims:
+                claim_data = {
+                    "claim_id": c.claim_id,
+                    "claimant_name": c.claimant_name,
+                    "lawyer_name": c.lawyer_name,
+                    "medical_provider_name": c.medical_provider_name,
+                    "ip_address": c.ip_address,
+                    "accident_date": c.accident_date,
+                    "claim_submission_date": c.claim_submission_date,
+                    "accident_location_state": c.accident_location_state,
+                    "police_report_filed": c.police_report_filed,
+                    "previous_claims_count": c.previous_claims_count,
+                    "accident_time": c.accident_time,
+                    "accident_location_city": c.accident_location_city,
+                    "accident_description": c.accident_description,
+                    "loss_type": c.loss_type,
+                    "claimant_age": c.claimant_age,
+                    "claimant_gender": c.claimant_gender,
+                    "claimant_city": c.claimant_city,
+                    "claimant_state": c.claimant_state,
+                    "vehicle_make": c.vehicle_make,
+                    "vehicle_model": c.vehicle_model,
+                    "vehicle_year": c.vehicle_year,
+                    "vehicle_use_type": c.vehicle_use_type,
+                    "vehicle_mileage": c.vehicle_mileage,
+                    "damage_severity": c.damage_severity,
+                    "injury_severity": c.injury_severity,
+                    "medical_treatment_received": c.medical_treatment_received,
+                    "medical_cost_estimate": c.medical_cost_estimate,
+                    "airbags_deployed": c.airbags_deployed,
+                    "policy_tenure_months": c.policy_tenure_months,
+                    "coverage_type": c.coverage_type,
+                    "policy_type": c.policy_type,
+                    "deductible_amount": c.deductible_amount,
+                    "repair_shop_name": c.repair_shop_name,
+                    "reported_by": c.reported_by,
+                }
+                all_claims_data.append(claim_data)
+            
+            # Build graph once
+            model_service.build_graph_from_claims(all_claims_data)
+            
+            # Score each claim
+            for i, claim in enumerate(claims):
+                claim_data = {
+                    "claim_id": claim.claim_id,
+                    "claimant_name": claim.claimant_name,
+                    "lawyer_name": claim.lawyer_name,
+                    "medical_provider_name": claim.medical_provider_name,
+                    "ip_address": claim.ip_address,
+                    "accident_date": claim.accident_date,
+                    "claim_submission_date": claim.claim_submission_date,
+                    "accident_location_state": claim.accident_location_state,
+                    "police_report_filed": claim.police_report_filed,
+                    "previous_claims_count": claim.previous_claims_count,
+                    "accident_time": claim.accident_time,
+                    "accident_location_city": claim.accident_location_city,
+                    "accident_description": claim.accident_description,
+                    "loss_type": claim.loss_type,
+                    "claimant_age": claim.claimant_age,
+                    "claimant_gender": claim.claimant_gender,
+                    "claimant_city": claim.claimant_city,
+                    "claimant_state": claim.claimant_state,
+                    "vehicle_make": claim.vehicle_make,
+                    "vehicle_model": claim.vehicle_model,
+                    "vehicle_year": claim.vehicle_year,
+                    "vehicle_use_type": claim.vehicle_use_type,
+                    "vehicle_mileage": claim.vehicle_mileage,
+                    "damage_severity": claim.damage_severity,
+                    "injury_severity": claim.injury_severity,
+                    "medical_treatment_received": claim.medical_treatment_received,
+                    "medical_cost_estimate": claim.medical_cost_estimate,
+                    "airbags_deployed": claim.airbags_deployed,
+                    "policy_tenure_months": claim.policy_tenure_months,
+                    "coverage_type": claim.coverage_type,
+                    "policy_type": claim.policy_type,
+                    "deductible_amount": claim.deductible_amount,
+                    "repair_shop_name": claim.repair_shop_name,
+                    "reported_by": claim.reported_by,
+                }
+                
+                score_result = model_service.score_claim(claim_data, all_claims_data)
+                claim_dicts[i]["modelRiskScore"] = score_result["risk_score"]
+                claim_dicts[i]["modelRiskCategory"] = score_result["risk_category"]
+                claim_dicts[i]["riskBreakdown"] = score_result["breakdown"]
+                claim_dicts[i]["graphFeatures"] = score_result["features"]
+                claim_dicts[i]["modelDetails"] = {
+                    "model_score": score_result["model_score"],
+                    "graph_risk": score_result["graph_risk"],
+                    "rule_adjustment": score_result["rule_adjustment"]
+                }
+        except Exception as e:
+            print(f"Error computing model scores: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    return claim_dicts
 
 
 @app.get("/api/claims/{claim_id}")
@@ -786,6 +1028,106 @@ async def get_claim(claim_id: str, db: Session = Depends(get_db)):
     if not claim:
         raise HTTPException(status_code=404, detail="Claim not found")
     return claim.to_dict()
+
+
+@app.get("/api/graph")
+async def get_graph_data(db: Session = Depends(get_db)):
+    """
+    Get graph data for 3D visualization showing connections between claims.
+    Returns nodes (claims, doctors, lawyers, IPs) and edges (connections).
+    """
+    # Get all claims from database
+    all_claims = db.query(Claim).all()
+    
+    # Build graph from all claims
+    graph_data = {
+        "nodes": [],
+        "edges": []
+    }
+    
+    # Track entities to avoid duplicates
+    nodes_map = {}  # node_id -> node_data
+    edges_set = set()  # (source, target, type) tuples
+    
+    node_id_counter = 0
+    
+    for claim in all_claims:
+        claim_id = claim.claim_id
+        claim_node_id = f"claim_{claim_id}"
+        
+        # Add claim node
+        if claim_node_id not in nodes_map:
+            nodes_map[claim_node_id] = {
+                "id": claim_node_id,
+                "type": "claim",
+                "label": claim_id,
+                "claimant_name": claim.claimant_name or "Unknown",
+                "risk_score": claim.risk_score or 0,
+                "risk_category": claim.risk_category or "low",
+                "status": claim.status or "unknown"
+            }
+        
+        # Add connections based on shared entities
+        entities = {
+            "doctor": claim.medical_provider_name or claim.doctor,
+            "lawyer": claim.lawyer_name or claim.lawyer,
+            "ip": claim.ip_address,
+            "person": claim.claimant_name
+        }
+        
+        for entity_type, entity_value in entities.items():
+            if entity_value and str(entity_value).strip() and str(entity_value).lower() != "none":
+                entity_node_id = f"{entity_type}_{entity_value}"
+                
+                # Add entity node
+                if entity_node_id not in nodes_map:
+                    nodes_map[entity_node_id] = {
+                        "id": entity_node_id,
+                        "type": entity_type,
+                        "label": str(entity_value)[:30],  # Truncate long names
+                        "entity_value": str(entity_value)
+                    }
+                
+                # Add edge from claim to entity
+                edge_key = (claim_node_id, entity_node_id, entity_type)
+                if edge_key not in edges_set:
+                    edges_set.add(edge_key)
+    
+    # Find connections between claims (shared entities)
+    # Group entities by their connected claims
+    entity_to_claims = {}
+    for edge_key in edges_set:
+        source, target, edge_type = edge_key
+        if source.startswith("claim_") and not target.startswith("claim_"):
+            if target not in entity_to_claims:
+                entity_to_claims[target] = []
+            entity_to_claims[target].append(source)
+    
+    # Add edges between claims that share entities
+    for entity_id, connected_claims in entity_to_claims.items():
+        if len(connected_claims) > 1:
+            # Connect all claims that share this entity
+            for i, claim1 in enumerate(connected_claims):
+                for claim2 in connected_claims[i+1:]:
+                    connection_type = nodes_map[entity_id]["type"]
+                    edge_key = (claim1, claim2, f"shared_{connection_type}")
+                    if edge_key not in edges_set:
+                        edges_set.add(edge_key)
+    
+    # Convert to lists
+    graph_data["nodes"] = list(nodes_map.values())
+    graph_data["edges"] = [
+        {
+            "id": f"edge_{i}",
+            "source": source,
+            "target": target,
+            "type": edge_type,
+            "relationship": edge_type
+        }
+        for i, (source, target, edge_type) in enumerate(edges_set)
+    ]
+    
+    return graph_data
 
 
 @app.get("/api/stats")
