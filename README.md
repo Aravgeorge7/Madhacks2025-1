@@ -4,20 +4,20 @@
 
 RiskChain Intelligence is an AI-powered insurance fraud detection platform that uses graph network analysis to identify fraud rings and calculate real-time risk scores for insurance claims.
 
-## 🎯 Overview
+## Overview
 
 Traditional fraud detection systems analyze claims in isolation. RiskChain builds a **connection graph** across all claims to find hidden patterns - shared doctors, lawyers, IP addresses, and other suspicious connections that indicate organized fraud rings.
 
 ### Key Features
 
-- 🔍 **Graph-Based Fraud Detection**: NetworkX-powered connection analysis
-- 📊 **Real-Time Risk Scoring**: 0-100 risk score calculated instantly
-- 🎨 **Modern Dashboard**: Next.js frontend with real-time updates
-- 💾 **Comprehensive Database**: SQLite with 350+ pre-loaded claims
-- 📝 **Claim Submission Form**: Full-featured form matching industry standards
-- 🔄 **Auto-Refresh**: Dashboard updates automatically when new claims are submitted
+- **Graph-Based Fraud Detection**: NetworkX-powered connection analysis
+- **Real-Time Risk Scoring**: 0-100 risk score calculated instantly
+- **Modern Dashboard**: Next.js frontend with real-time updates
+- **Comprehensive Database**: SQLite with 350+ pre-loaded claims
+- **Claim Submission Form**: Full-featured form matching industry standards
+- **Auto-Refresh**: Dashboard updates automatically when new claims are submitted
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 RiskChain Intelligence
@@ -35,7 +35,7 @@ RiskChain Intelligence
     └── SQLite (riskchain.db with 350 claims)
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -92,7 +92,7 @@ RiskChain Intelligence
    - Open `http://localhost:3000` in your browser
    - Choose "Employee Portal" or "Submit a Claim"
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Madhacks2025-1/
@@ -118,7 +118,7 @@ Madhacks2025-1/
 └── README.md                 # This file
 ```
 
-## 🔐 Risk Scoring Algorithm
+## Risk Scoring Algorithm
 
 The risk score (0-100) is calculated based on graph connections:
 
@@ -131,13 +131,13 @@ The risk score (0-100) is calculated based on graph connections:
 | **NLP Fraud Score** | +0-10 | AI analysis (future) |
 
 **Risk Categories:**
-- 🟢 **Low Risk**: 0-30 points
-- 🟡 **Medium Risk**: 31-69 points
-- 🔴 **High Risk**: 70-100 points
+- **Low Risk**: 0-30 points
+- **Medium Risk**: 31-69 points
+- **High Risk**: 70-100 points
 
 See `backend/RISK_SCORING.md` for detailed documentation.
 
-## 📊 Database Schema
+## Database Schema
 
 The database stores claims with:
 - **Structured Fields**: Policy number, dates, vehicle info, etc.
@@ -147,7 +147,7 @@ The database stores claims with:
 
 See `backend/DATABASE_SETUP.md` for setup instructions.
 
-## 🔌 API Endpoints
+## API Endpoints
 
 ### Claim Management
 - `POST /api/claims` - Submit new claim
@@ -159,21 +159,21 @@ See `backend/DATABASE_SETUP.md` for setup instructions.
 - `GET /docs` - Interactive API documentation (Swagger UI)
 - `GET /redoc` - Alternative API documentation
 
-## 🎨 Frontend Routes
+## Frontend Routes
 
 - `/` - Landing page (Employee/Claimant selection)
 - `/dashboard` - Employee dashboard (view claims)
 - `/form` - Claim submission form
 - `/graph` - Graph visualization (future)
 
-## 🔄 Real-Time Updates
+## Real-Time Updates
 
 The dashboard automatically:
 - Refreshes every 5 seconds to show new claims
 - Updates instantly when a claim is submitted
 - Works across multiple browser tabs
 
-## 🧪 Testing
+## Testing
 
 ### Test Graph Service
 ```bash
@@ -187,7 +187,7 @@ cd backend
 python import_csv_data.py ../car_insurance_training_dataset_with_images.csv
 ```
 
-## 📦 Dependencies
+## Dependencies
 
 ### Backend
 - FastAPI - Web framework
@@ -202,7 +202,7 @@ python import_csv_data.py ../car_insurance_training_dataset_with_images.csv
 - Tailwind CSS - Styling
 - React Flow - Graph visualization
 
-## 🛠️ Development
+## Development
 
 ### Branch Structure
 - `main` - Production-ready code
@@ -215,7 +215,7 @@ Claims can be submitted via:
 2. API endpoint `POST /api/claims`
 3. CSV import script
 
-## 📝 Form Fields
+## Form Fields
 
 The claim submission form includes:
 - Policy information
@@ -228,7 +228,7 @@ The claim submission form includes:
 
 All fields are stored in the database as both structured columns and JSON.
 
-## 🚨 Fraud Detection
+## Fraud Detection
 
 The system detects:
 - **Fraud Mills**: Doctors/lawyers handling too many claims
@@ -236,7 +236,7 @@ The system detects:
 - **Suspicious Patterns**: Unusual connection clusters
 - **Missing Documentation**: Incomplete claim submissions
 
-## 📈 Statistics
+## Statistics
 
 Current database contains:
 - **350 claims** pre-loaded from CSV
@@ -244,18 +244,18 @@ Current database contains:
 - **Risk scores** calculated for each claim
 - **Real-time updates** when new claims are submitted
 
-## 🤝 Contributing
+## Contributing
 
 1. Create a feature branch
 2. Make your changes
 3. Test thoroughly
 4. Submit a pull request
 
-## 📄 License
+## License
 
 This project is part of MadHacks 2025 hackathon.
 
-## 🔗 Links
+## Links
 
 - **Backend API**: http://localhost:8000
 - **API Docs**: http://localhost:8000/docs
@@ -263,21 +263,21 @@ This project is part of MadHacks 2025 hackathon.
 - **Dashboard**: http://localhost:3000/dashboard
 - **Form**: http://localhost:3000/form
 
-## 📚 Documentation
+## Documentation
 
 - `backend/API_README.md` - API documentation
 - `backend/DATABASE_SETUP.md` - Database setup guide
 - `backend/RISK_SCORING.md` - Risk scoring algorithm details
 
-## 🎯 Future Enhancements
+## Future Enhancements
 
-- [ ] AI/NLP analysis of claim descriptions
-- [ ] Machine learning models for fraud prediction
-- [ ] Email integration for automatic claim processing
-- [ ] Advanced graph visualization
-- [ ] Historical pattern analysis
-- [ ] Geographic clustering detection
+- AI/NLP analysis of claim descriptions
+- Machine learning models for fraud prediction
+- Email integration for automatic claim processing
+- Advanced graph visualization
+- Historical pattern analysis
+- Geographic clustering detection
 
 ---
 
-**Built with ❤️ for MadHacks 2025**
+**Built for MadHacks 2025**
