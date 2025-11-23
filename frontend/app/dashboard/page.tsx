@@ -6,6 +6,7 @@ import { Claim } from "@/types/claim";
 import { Star, Shield, AlertTriangle, CheckCircle, Info, TrendingUp, Users, FileWarning, Inbox, LogOut } from "lucide-react";
 import Link from "next/link";
 import { isAuthenticated, logout } from "@/lib/auth";
+import { useClaimsData } from "@/hooks/useClaimsData";
 
 function getRiskBadgeColor(riskScore: number): string {
   if (riskScore < 30) {
@@ -49,10 +50,13 @@ function formatDate(dateString: string): string {
 
 export default function Dashboard() {
   const router = useRouter();
-  const [claims, setClaims] = useState<Claim[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const REFRESH_INTERVAL = 10_000;
+  const { claims, loading, error } = useClaimsData({
+    enabled: authChecked,
+    pollInterval: REFRESH_INTERVAL,
+    limit: 100,
+  });
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -61,62 +65,6 @@ export default function Dashboard() {
     }
     setAuthChecked(true);
   }, [router]);
-
-  useEffect(() => {
-    if (!authChecked) return;
-    fetchClaims();
-    
-    const interval = setInterval(() => {
-      fetchClaims(false);
-    }, 5000);
-    
-    const handleStorageChange = () => {
-      const claimSubmitted = localStorage.getItem("claimSubmitted");
-      if (claimSubmitted) {
-        fetchClaims(false);
-        localStorage.removeItem("claimSubmitted");
-      }
-    };
-    
-    window.addEventListener("storage", handleStorageChange);
-    
-    const checkInterval = setInterval(() => {
-      const claimSubmitted = localStorage.getItem("claimSubmitted");
-      if (claimSubmitted) {
-        fetchClaims(false);
-        localStorage.removeItem("claimSubmitted");
-      }
-    }, 1000);
-    
-    return () => {
-      clearInterval(interval);
-      clearInterval(checkInterval);
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, [authChecked]);
-
-  const fetchClaims = async (showLoading = true) => {
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-      const response = await fetch("http://localhost:8000/api/claims?limit=100");
-      if (!response.ok) {
-        throw new Error("Failed to fetch claims");
-      }
-      const data = await response.json();
-      setClaims(data);
-      setError(null);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to load claims";
-      setError(errorMessage);
-      console.error("Error fetching claims:", err);
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -179,7 +127,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-3 px-4 py-2 bg-green-900/30 border border-green-700/50 rounded-lg">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
               <span className="text-sm font-medium text-green-400">
-                Auto-refreshing every 5 seconds
+                Auto-refreshing every {Math.round(REFRESH_INTERVAL / 1000)} seconds
               </span>
             </div>
           </div>

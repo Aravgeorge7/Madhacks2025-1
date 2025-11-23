@@ -188,7 +188,7 @@ class ModelService:
             # Rule-based adjustments
             rule_adj = self._compute_rule_adjustment(model_claim)
             breakdown["missing_docs"] = 5 if not model_claim.get("police_report_filed") else 0
-            breakdown["previous_claims"] = 5 if model_claim.get("previous_claims_count", 0) >= 3 else 0
+            breakdown["previous_claims"] = 0
             breakdown["police_report"] = 0 if model_claim.get("police_report_filed") else 5
             
             # Calculate final score (0-100)
@@ -312,8 +312,6 @@ class ModelService:
         adj = 0.0
         if claim.get("police_report_filed") == 0:
             adj += 5
-        if claim.get("previous_claims_count", 0) >= 3:
-            adj += 5
         if claim.get("medical_provider_name") and claim.get("lawyer_name"):
             adj += 3
         return adj
@@ -323,8 +321,6 @@ class ModelService:
         score = 0
         if not claim.get("police_report_filed"):
             score += 10
-        if claim.get("previous_claims_count", 0) >= 3:
-            score += 15
         if claim.get("medical_provider_name") and claim.get("lawyer_name"):
             score += 10
         
@@ -347,7 +343,7 @@ class ModelService:
                 "provider_lawyer_combo": 0,
                 "ip_reuse": 0,
                 "missing_docs": 5 if not claim.get("police_report_filed") else 0,
-                "previous_claims": 5 if claim.get("previous_claims_count", 0) >= 3 else 0,
+                "previous_claims": 0,
                 "police_report": 0 if claim.get("police_report_filed") else 5
             },
             "features": {}

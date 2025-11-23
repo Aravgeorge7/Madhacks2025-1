@@ -6,6 +6,7 @@ import { Claim } from "@/types/claim";
 import { Shield, AlertTriangle, CheckCircle, Info, TrendingUp, Users, FileWarning, ChevronDown, ChevronUp, LogOut } from "lucide-react";
 import { isAuthenticated, logout } from "@/lib/auth";
 import Link from "next/link";
+import { useClaimsData } from "@/hooks/useClaimsData";
 
 function getRiskBadgeColor(riskScore: number): string {
   if (riskScore < 30) {
@@ -143,11 +144,14 @@ function generateRiskExplanation(claim: Claim): string {
 
 export default function Analytics() {
   const router = useRouter();
-  const [claims, setClaims] = useState<Claim[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [expandedClaims, setExpandedClaims] = useState<Set<string | number>>(new Set());
+  const REFRESH_INTERVAL = 10_000;
+  const { claims, loading, error } = useClaimsData({
+    enabled: authChecked,
+    pollInterval: REFRESH_INTERVAL,
+    limit: 100,
+  });
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -156,40 +160,6 @@ export default function Analytics() {
     }
     setAuthChecked(true);
   }, [router]);
-
-  useEffect(() => {
-    if (!authChecked) return;
-    fetchClaims();
-    
-    const interval = setInterval(() => {
-      fetchClaims(false);
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, [authChecked]);
-
-  const fetchClaims = async (showLoading = true) => {
-    try {
-      if (showLoading) {
-        setLoading(true);
-      }
-      const response = await fetch("http://localhost:8000/api/claims?limit=100");
-      if (!response.ok) {
-        throw new Error("Failed to fetch claims");
-      }
-      const data = await response.json();
-      setClaims(data);
-      setError(null);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to load claims";
-      setError(errorMessage);
-      console.error("Error fetching claims:", err);
-    } finally {
-      if (showLoading) {
-        setLoading(false);
-      }
-    }
-  };
 
   const handleLogout = () => {
     logout();
