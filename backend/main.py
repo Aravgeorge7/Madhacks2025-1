@@ -333,6 +333,11 @@ async def root():
                     <div class="section">
                         <div class="section-title">IV. Claimant Information</div>
                         <div class="form-group">
+                            <label>Claimant Name</label>
+                            <input name="claimant_name" type="text" placeholder="Full name of the claimant" required>
+                            <small>Full name of the claimant</small>
+                        </div>
+                        <div class="form-group">
                             <label>Claimant Age</label>
                             <input name="claimant_age" type="number" placeholder="Enter age" step="1">
                             <small>Enter age</small>
@@ -528,6 +533,11 @@ async def root():
                             <label>Photo URL</label>
                             <input name="photos" type="text" placeholder="URL to accident photos">
                             <small>URL to accident photos</small>
+                        </div>
+                        <div class="form-group">
+                            <label>IP Address</label>
+                            <input name="ip_address" type="text" placeholder="IP address (auto-detected if left blank)">
+                            <small>IP address (auto-detected if left blank)</small>
                         </div>
                     </div>
                     
