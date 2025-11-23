@@ -32,9 +32,22 @@ export default function FormPage() {
         <div>
           <Link
             href="/"
-            className="text-slate-600 hover:text-slate-900 mb-2 inline-block text-sm"
+            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-2 text-sm font-medium transition-colors"
           >
-            ← Back to Home
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+              />
+            </svg>
+            Back to Home
           </Link>
           <h1 className="text-3xl font-bold text-slate-900">
             Submit Insurance Claim
