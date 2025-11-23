@@ -1,6 +1,6 @@
 "use client";
 
-import { LayoutDashboard, Inbox, Network, BarChart, Shield } from "lucide-react";
+import { LayoutDashboard, Network, BarChart, Shield } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { isAuthenticated, getUserEmail } from "@/lib/auth";
@@ -38,7 +38,6 @@ export default function Sidebar() {
   
   const navItems = [
     { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-    { name: "Claims Inbox", icon: Inbox, href: "/claims" },
     { name: "Risk Graph", icon: Network, href: "/graph" },
     { name: "Analytics", icon: BarChart, href: "/analytics" },
   ];
@@ -112,4 +111,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-
