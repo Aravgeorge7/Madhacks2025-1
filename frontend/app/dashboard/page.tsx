@@ -102,12 +102,6 @@ export default function Dashboard() {
             RiskChain Intelligence Dashboard
           </h1>
         </div>
-        <button
-          onClick={() => fetchClaims(true)}
-          className="px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors text-sm font-medium"
-        >
-          🔄 Refresh
-        </button>
       </div>
       
       <div className="flex justify-between items-center mb-6">

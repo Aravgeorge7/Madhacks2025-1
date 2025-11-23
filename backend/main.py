@@ -529,16 +529,6 @@ async def root():
                             <input name="photos" type="text" placeholder="URL to accident photos">
                             <small>URL to accident photos</small>
                         </div>
-                        <div class="form-group">
-                            <label>Claim Status</label>
-                            <select name="status">
-                                <option value="pending">Pending</option>
-                                <option value="under_review">Under Review</option>
-                                <option value="approved">Approved</option>
-                                <option value="denied">Denied</option>
-                                <option value="settled">Settled</option>
-                            </select>
-                        </div>
                     </div>
                     
                     <div class="submit-section">
