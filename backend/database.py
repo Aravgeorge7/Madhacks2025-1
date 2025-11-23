@@ -103,23 +103,32 @@ class Claim(Base):
     
     def to_dict(self):
         """Convert claim to dictionary."""
+        # Get data from claim_data_json if available, otherwise use direct fields
+        json_data = self.claim_data_json or {}
+        
         return {
-            "id": self.id,
+            "id": str(self.id),
             "claim_id": self.claim_id,
-            "claimant_name": self.claimant_name,
-            "doctor": self.doctor,
-            "lawyer": self.lawyer,
-            "ip_address": self.ip_address,
-            "accident_type": self.accident_type,
-            "claim_date": self.claim_date.isoformat() if self.claim_date else None,
-            "risk_score": self.risk_score,
+            "claimantName": self.claimant_name or json_data.get("claimant_name") or "Unknown",
+            "policyNumber": self.policy_number or json_data.get("policy_number") or "N/A",
+            "incidentDate": (
+                self.accident_date.isoformat() if self.accident_date 
+                else json_data.get("accident_date") 
+                or self.claim_date.isoformat() if self.claim_date 
+                else None
+            ),
+            "incidentType": (
+                self.loss_type or self.accident_type 
+                or json_data.get("loss_type") 
+                or json_data.get("accident_type") 
+                or "Unknown"
+            ),
+            "status": self.status or json_data.get("status") or "pending",
+            "riskScore": self.risk_score or 0,
+            "urgency": json_data.get("urgency") or 1,
+            "missingDocs": self.missing_docs or json_data.get("missing_docs") or [],
             "risk_category": self.risk_category,
-            "fraud_nlp_score": self.fraud_nlp_score,
-            "claim_data_json": self.claim_data_json,
-            "summary": self.summary,
-            "missing_docs": self.missing_docs,
             "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None
         }
 
 

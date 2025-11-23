@@ -1,4 +1,4 @@
-export type ClaimStatus = "New" | "Review" | "Approved" | "Rejected";
+export type ClaimStatus = "New" | "Review" | "Approved" | "Rejected" | "pending" | "unsettled" | "under_review" | "approved" | "denied" | "settled";
 
 export interface Claim {
   id: string;

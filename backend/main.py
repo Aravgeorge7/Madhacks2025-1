@@ -738,10 +738,24 @@ async def create_claim(
 async def get_claims(
     skip: int = 0,
     limit: int = 100,
+    status: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """Get all claims with pagination."""
-    claims = db.query(Claim).offset(skip).limit(limit).all()
+    """Get claims with pagination and optional status filter."""
+    query = db.query(Claim)
+    
+    # Filter by status if provided
+    if status:
+        query = query.filter(Claim.status == status)
+    else:
+        # Default: get pending or unsettled claims
+        query = query.filter(
+            (Claim.status == "pending") | 
+            (Claim.status == "unsettled") |
+            (Claim.status == None)
+        )
+    
+    claims = query.order_by(Claim.created_at.desc()).offset(skip).limit(limit).all()
     return [claim.to_dict() for claim in claims]
 
 

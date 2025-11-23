@@ -1,6 +1,6 @@
 "use client";
 
-import { MOCK_CLAIMS } from "@/data/mockClaims";
+import { useState, useEffect } from "react";
 import { Claim } from "@/types/claim";
 import { Star } from "lucide-react";
 import Link from "next/link";
@@ -25,6 +25,32 @@ function formatDate(dateString: string): string {
 }
 
 export default function Home() {
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchClaims();
+  }, []);
+
+  const fetchClaims = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("http://localhost:8000/api/claims?limit=100");
+      if (!response.ok) {
+        throw new Error("Failed to fetch claims");
+      }
+      const data = await response.json();
+      setClaims(data);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || "Failed to load claims");
+      console.error("Error fetching claims:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="h-full overflow-auto p-8">
       <div className="flex justify-between items-center mb-6">
@@ -42,36 +68,54 @@ export default function Home() {
       <h2 className="mb-6 text-2xl font-bold text-slate-900">
         Incoming Claims
       </h2>
-      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Claimant
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Type
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Date
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Urgency
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Risk Score
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {MOCK_CLAIMS.map((claim: Claim) => (
+      
+      {loading && (
+        <div className="text-center py-8 text-slate-600">Loading claims...</div>
+      )}
+      
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md mb-4">
+          Error: {error}
+        </div>
+      )}
+      
+      {!loading && !error && claims.length === 0 && (
+        <div className="text-center py-8 text-slate-600">
+          No pending or unsettled claims found.
+        </div>
+      )}
+      
+      {!loading && !error && claims.length > 0 && (
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Claimant
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Type
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Date
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Urgency
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Risk Score
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {claims.map((claim: Claim) => (
                 <tr
                   key={claim.id}
                   className="transition-colors hover:bg-slate-50"
