@@ -1,0 +1,28 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="rc-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="50%" stop-color="#4f46e5"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="rc-shield" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="100%" stop-color="#bae6fd"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="240" height="240" rx="56" fill="url(#rc-gradient)"/>
+  <path
+    d="M128 40L208 72V136C208 190 170 226 128 244C86 226 48 190 48 136V72L128 40Z"
+    fill="rgba(15,23,42,0.25)"
+  />
+  <path
+    d="M128 56L192 80V134C192 176 163 210 128 226C93 210 64 176 64 134V80L128 56Z"
+    fill="url(#rc-shield)"
+  />
+  <path
+    d="M128 78L85 94V134C85 168 105 192 128 202C151 192 171 168 171 134V94L128 78Z"
+    fill="#2563eb"
+    opacity="0.9"
+  />
+</svg>
+

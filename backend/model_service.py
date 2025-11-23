@@ -60,9 +60,15 @@ class ModelService:
                         print("Warning: Model file exists but model object is None")
                         return False
                 except Exception as load_error:
-                    print(f"Error loading model file: {load_error}")
-                    import traceback
-                    traceback.print_exc()
+                    error_msg = str(load_error)
+                    # Check if it's a version compatibility issue
+                    if "version" in error_msg.lower() or "unpickle" in error_msg.lower() or "attribute" in error_msg.lower():
+                        print(f"⚠️  Model version compatibility issue: {error_msg}")
+                        print("   Using fallback scoring instead.")
+                    else:
+                        print(f"Error loading model file: {error_msg}")
+                        import traceback
+                        traceback.print_exc()
                     return False
             else:
                 print(f"Warning: No pre-trained model found at {model_path}. Using fallback scoring.")

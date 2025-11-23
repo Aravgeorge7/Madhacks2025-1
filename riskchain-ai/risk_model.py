@@ -100,9 +100,28 @@ class RiskModel:
                 # Only use NaN for columns that had NaN during training
                 df[col] = np.nan if col in nan_allowed_cols else "unknown"
             else:
+                # Convert to string first to handle all types consistently
+                df[col] = df[col].astype(str)
                 if col in nan_allowed_cols:
                     # Replace "unknown", "None", empty strings with NaN for consistency with training
                     df[col] = df[col].replace({"unknown": np.nan, "None": np.nan, "": np.nan, "nan": np.nan})
+                    # Convert back to object type to allow NaN
+                    df[col] = df[col].astype(object)
+                else:
+                    # For non-nan-allowed columns, ensure "unknown" is used instead of NaN
+                    df[col] = df[col].replace({"nan": "unknown", "None": "unknown", "": "unknown"})
+                    df[col] = df[col].fillna("unknown")
+        
+        # Ensure all categorical columns are object type (allows NaN for nan_allowed_cols)
+        for col in categorical_cols:
+            if col in df.columns:
+                if col not in nan_allowed_cols:
+                    # Ensure no NaN values in non-allowed columns
+                    df[col] = df[col].fillna("unknown").astype(str)
+                else:
+                    # For nan_allowed_cols, convert NaN to empty string for encoder compatibility
+                    # The encoder should handle this, but we'll use a placeholder
+                    df[col] = df[col].fillna("__MISSING__").astype(str)
 
         return df, numeric_cols, categorical_cols
 
@@ -142,6 +161,9 @@ class RiskModel:
     ) -> Tuple[pd.DataFrame, Optional[pd.Series]]:
         df, numeric_cols, categorical_cols = self._prepare_base_features(df)
         claim_ids = df["claim_id"].astype(str)
+        
+        # Columns that commonly have NaN in training data
+        nan_allowed_cols = {"lawyer_name", "medical_provider_name"}
 
         # Text embeddings
         text_df = self._encode_text(
@@ -156,7 +178,30 @@ class RiskModel:
             graph_df = gf.compute_features_for_claims(df.to_dict("records"))
             graph_df.index = claim_ids
 
-        X_tabular = df[numeric_cols + categorical_cols]
+        # Ensure proper data types before transformation
+        X_tabular = df[numeric_cols + categorical_cols].copy()
+        
+        # Convert numeric columns to float to handle any type issues
+        for col in numeric_cols:
+            if col in X_tabular.columns:
+                X_tabular[col] = pd.to_numeric(X_tabular[col], errors='coerce').fillna(0.0)
+        
+        # Ensure categorical columns are properly typed for OneHotEncoder
+        # The encoder expects object type with string values or NaN
+        for col in categorical_cols:
+            if col in X_tabular.columns:
+                # Convert to object type first
+                X_tabular[col] = X_tabular[col].astype(object)
+                # For columns that don't allow NaN, fill with "unknown"
+                if col not in nan_allowed_cols:
+                    X_tabular[col] = X_tabular[col].fillna("unknown")
+                    # Ensure all values are strings
+                    X_tabular[col] = X_tabular[col].astype(str)
+                else:
+                    # For nan_allowed_cols, convert string representations of NaN to actual NaN
+                    mask = (X_tabular[col].astype(str).isin(["nan", "None", ""]))
+                    X_tabular.loc[mask, col] = np.nan
+        
         y = df["fraud_label"].astype(int) if "fraud_label" in df.columns else None
 
         if fit or not hasattr(self, "preprocessor"):
@@ -176,7 +221,21 @@ class RiskModel:
             )
             tabular_array = self.preprocessor.fit_transform(X_tabular)
         else:
-            tabular_array = self.preprocessor.transform(X_tabular)
+            try:
+                tabular_array = self.preprocessor.transform(X_tabular)
+            except (TypeError, ValueError) as e:
+                # Handle numpy/scikit-learn version compatibility issues
+                if "isnan" in str(e) or "ufunc" in str(e):
+                    # Fix: Ensure all categorical columns are properly typed strings
+                    for col in categorical_cols:
+                        if col in X_tabular.columns:
+                            # Convert to string, replacing NaN representations with placeholder
+                            X_tabular[col] = X_tabular[col].astype(str)
+                            X_tabular[col] = X_tabular[col].replace({"nan": "unknown", "None": "unknown", "": "unknown"})
+                    # Try again
+                    tabular_array = self.preprocessor.transform(X_tabular)
+                else:
+                    raise
 
         tabular_df = pd.DataFrame(
             tabular_array,
