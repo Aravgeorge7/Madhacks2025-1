@@ -1,0 +1,301 @@
+                    <div class="section">
+                        <div class="section-title">I. Claim Identification</div>
+
+                        <div class="form-group">
+                            <label>Insurance Policy Number</label>
+                            <input name="policy_number" type="text" placeholder="Enter policy number">
+                            <small>Enter policy number</small>
+                        </div>
+
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">II. Dates and Times</div>
+
+                        <div class="form-group">
+                            <label>Claim Submission Date</label>
+                            <input name="claim_submission_date" type="date">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Date of Accident</label>
+                            <input name="accident_date" type="date">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Time of Accident</label>
+                            <input name="accident_time" type="time" placeholder="HH:MM format">
+                            <small>HH:MM format</small>
+                        </div>
+
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">III. Location Information</div>
+
+                        <div class="form-group">
+                            <label>Accident Location - City</label>
+                            <input name="accident_location_city" type="text" placeholder="City where accident occurred">
+                            <small>City where accident occurred</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Accident Location - State</label>
+                            <input name="accident_location_state" type="text" placeholder="State where accident occurred (e.g., CA, NY)">
+                            <small>State where accident occurred (e.g., CA, NY)</small>
+                        </div>
+
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">IV. Claimant Information</div>
+
+                        <div class="form-group">
+                            <label>Claimant Age</label>
+                            <input name="claimant_age" type="number" placeholder="Enter age" step="0.01">
+                            <small>Enter age</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Claimant Gender</label>
+                            <select name="claimant_gender">
+                                <option value="">-- Please Select --</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Claimant City</label>
+                            <input name="claimant_city" type="text" placeholder="City of residence">
+                            <small>City of residence</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Claimant State</label>
+                            <input name="claimant_state" type="text" placeholder="State of residence">
+                            <small>State of residence</small>
+                        </div>
+
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">V. Vehicle Information</div>
+
+                        <div class="form-group">
+                            <label>Vehicle Make</label>
+                            <input name="vehicle_make" type="text" placeholder="e.g., Toyota, Honda, Ford">
+                            <small>e.g., Toyota, Honda, Ford</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Vehicle Model</label>
+                            <input name="vehicle_model" type="text" placeholder="e.g., Camry, Accord, F-150">
+                            <small>e.g., Camry, Accord, F-150</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Vehicle Year</label>
+                            <input name="vehicle_year" type="number" placeholder="e.g., 2020" step="0.01">
+                            <small>e.g., 2020</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Vehicle Use Type</label>
+                            <select name="vehicle_use_type">
+                                <option value="">-- Please Select --</option>
+                                <option value="personal">Personal</option>
+                                <option value="commercial">Commercial</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Vehicle Mileage</label>
+                            <input name="vehicle_mileage" type="number" placeholder="Current odometer reading" step="0.01">
+                            <small>Current odometer reading</small>
+                        </div>
+
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">VI. Incident Details</div>
+
+                        <div class="form-group">
+                            <label>Loss Type</label>
+                            <select name="loss_type">
+                                <option value="">-- Please Select --</option>
+                                <option value="collision">Collision</option>
+                                <option value="comprehensive">Comprehensive</option>
+                                <option value="liability">Liability</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Accident Description</label>
+                            <textarea name="accident_description" rows="4" placeholder="Provide detailed description of the accident"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Police Report Filed</label>
+                            <select name="police_report_filed">
+                                <option value="">-- Please Select --</option>
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">VII. Damage and Injury Information</div>
+
+                        <div class="form-group">
+                            <label>Damage Severity</label>
+                            <select name="damage_severity">
+                                <option value="">-- Please Select --</option>
+                                <option value="minor">Minor</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="major">Major</option>
+                                <option value="total_loss">Total Loss</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Injury Severity</label>
+                            <select name="injury_severity">
+                                <option value="">-- Please Select --</option>
+                                <option value="none">None</option>
+                                <option value="minor">Minor</option>
+                                <option value="moderate">Moderate</option>
+                                <option value="severe">Severe</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Medical Treatment Received</label>
+                            <select name="medical_treatment_received">
+                                <option value="">-- Please Select --</option>
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Medical Cost Estimate ($)</label>
+                            <input name="medical_cost_estimate" type="number" placeholder="Estimated medical costs" step="0.01">
+                            <small>Estimated medical costs</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Airbags Deployed</label>
+                            <select name="airbags_deployed">
+                                <option value="">-- Please Select --</option>
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">VIII. Policy Information</div>
+
+                        <div class="form-group">
+                            <label>Policy Tenure (Months)</label>
+                            <input name="policy_tenure_months" type="number" placeholder="Number of months policy has been active" step="0.01">
+                            <small>Number of months policy has been active</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Coverage Type</label>
+                            <select name="coverage_type">
+                                <option value="">-- Please Select --</option>
+                                <option value="collision">Collision</option>
+                                <option value="comprehensive">Comprehensive</option>
+                                <option value="liability_only">Liability Only</option>
+                                <option value="full_coverage">Full Coverage</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Policy Type</label>
+                            <select name="policy_type">
+                                <option value="">-- Please Select --</option>
+                                <option value="collision_only">Collision Only</option>
+                                <option value="comprehensive_only">Comprehensive Only</option>
+                                <option value="liability_only">Liability Only</option>
+                                <option value="full">Full</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Deductible Amount ($)</label>
+                            <input name="deductible_amount" type="number" placeholder="Deductible amount" step="0.01">
+                            <small>Deductible amount</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Previous Claims Count</label>
+                            <input name="previous_claims_count" type="number" placeholder="Number of previous claims" step="0.01">
+                            <small>Number of previous claims</small>
+                        </div>
+
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">IX. Service Providers</div>
+
+                        <div class="form-group">
+                            <label>Lawyer/Attorney Name</label>
+                            <input name="lawyer_name" type="text" placeholder="Name of legal representative">
+                            <small>Name of legal representative</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Medical Provider Name</label>
+                            <input name="medical_provider_name" type="text" placeholder="Name of medical provider/facility">
+                            <small>Name of medical provider/facility</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Repair Shop Name</label>
+                            <input name="repair_shop_name" type="text" placeholder="Name of repair shop">
+                            <small>Name of repair shop</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Reported By</label>
+                            <select name="reported_by">
+                                <option value="">-- Please Select --</option>
+                                <option value="self">Self</option>
+                                <option value="agent">Agent</option>
+                                <option value="third_party">Third Party</option>
+                            </select>
+                        </div>
+
+                    </div>
+
+                    <div class="section">
+                        <div class="section-title">X. Additional Information</div>
+
+                        <div class="form-group">
+                            <label>Photo URL</label>
+                            <input name="photos" type="text" placeholder="URL to accident photos">
+                            <small>URL to accident photos</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Claim Status</label>
+                            <select name="status">
+                                <option value="pending">Pending</option>
+                                <option value="under_review">Under Review</option>
+                                <option value="approved">Approved</option>
+                                <option value="denied">Denied</option>
+                                <option value="settled">Settled</option>
+                            </select>
+                        </div>
+
+                    </div>
+
