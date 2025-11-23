@@ -9,9 +9,9 @@ export default function FormPage() {
         <div>
           <Link
             href="/"
-            className="text-slate-600 hover:text-slate-900 mb-2 inline-block"
+            className="text-slate-600 hover:text-slate-900 mb-2 inline-block text-sm"
           >
-            ← Back to Dashboard
+            ← Back to Home
           </Link>
           <h1 className="text-3xl font-bold text-slate-900">
             Submit Insurance Claim
