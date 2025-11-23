@@ -32,11 +32,45 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchClaims();
+    
+    // Auto-refresh every 5 seconds to get new claims
+    const interval = setInterval(() => {
+      fetchClaims(false); // Don't show loading spinner on auto-refresh
+    }, 5000);
+    
+    // Also listen for claim submissions from other tabs
+    const handleStorageChange = () => {
+      const claimSubmitted = localStorage.getItem("claimSubmitted");
+      if (claimSubmitted) {
+        // Refresh immediately when a claim is submitted
+        fetchClaims(false);
+        localStorage.removeItem("claimSubmitted");
+      }
+    };
+    
+    window.addEventListener("storage", handleStorageChange);
+    
+    // Check for claim submissions periodically (for same-tab submissions)
+    const checkInterval = setInterval(() => {
+      const claimSubmitted = localStorage.getItem("claimSubmitted");
+      if (claimSubmitted) {
+        fetchClaims(false);
+        localStorage.removeItem("claimSubmitted");
+      }
+    }, 1000);
+    
+    return () => {
+      clearInterval(interval);
+      clearInterval(checkInterval);
+      window.removeEventListener("storage", handleStorageChange);
+    };
   }, []);
 
-  const fetchClaims = async () => {
+  const fetchClaims = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
       const response = await fetch("http://localhost:8000/api/claims?limit=100");
       if (!response.ok) {
         throw new Error("Failed to fetch claims");
@@ -48,7 +82,9 @@ export default function Dashboard() {
       setError(err.message || "Failed to load claims");
       console.error("Error fetching claims:", err);
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -66,11 +102,25 @@ export default function Dashboard() {
             RiskChain Intelligence Dashboard
           </h1>
         </div>
+        <button
+          onClick={() => fetchClaims(true)}
+          className="px-4 py-2 bg-slate-900 text-white rounded-md hover:bg-slate-800 transition-colors text-sm font-medium"
+        >
+          🔄 Refresh
+        </button>
       </div>
       
-      <h2 className="mb-6 text-2xl font-bold text-slate-900">
-        Incoming Claims
-      </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-slate-900">
+          Incoming Claims
+        </h2>
+        <div className="flex items-center gap-2 text-sm text-slate-600">
+          <span className="inline-flex items-center">
+            <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+            Auto-refreshing every 5 seconds
+          </span>
+        </div>
+      </div>
       
       {loading && (
         <div className="text-center py-8 text-slate-600">Loading claims...</div>

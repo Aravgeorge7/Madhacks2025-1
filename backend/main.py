@@ -601,6 +601,26 @@ async def root():
                         `;
                         resultDiv.style.display = 'block';
                         this.reset();
+                        
+                        // Notify parent window (dashboard) that a claim was submitted
+                        if (window.parent && window.parent !== window) {
+                            try {
+                                window.parent.postMessage({
+                                    type: 'CLAIM_SUBMITTED',
+                                    claimId: result.claim_id,
+                                    riskScore: result.risk_score
+                                }, '*');
+                            } catch (e) {
+                                console.log('Could not notify parent window');
+                            }
+                        }
+                        
+                        // Also use localStorage for cross-tab communication
+                        try {
+                            localStorage.setItem('claimSubmitted', Date.now().toString());
+                        } catch (e) {
+                            console.log('Could not set localStorage');
+                        }
                     } else {
                         throw new Error(result.detail || 'Submission failed');
                     }

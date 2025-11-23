@@ -1,8 +1,31 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function FormPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Listen for messages from the iframe (form submission success)
+    const handleMessage = (event: MessageEvent) => {
+      // Only accept messages from our backend
+      if (event.origin !== "http://localhost:8000") return;
+      
+      if (event.data.type === "CLAIM_SUBMITTED") {
+        // Notify dashboard to refresh (if open in another tab)
+        window.localStorage.setItem("claimSubmitted", Date.now().toString());
+        
+        // Optionally show success message
+        console.log("Claim submitted:", event.data.claimId);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
   return (
     <div className="h-full overflow-auto p-8">
       <div className="mb-6 flex items-center justify-between">
