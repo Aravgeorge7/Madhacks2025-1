@@ -3,7 +3,6 @@
 import { MOCK_CLAIMS } from "@/data/mockClaims";
 import { Claim } from "@/types/claim";
 import { Star } from "lucide-react";
-import ClaimForm from "@/components/ClaimForm";
 
 function getRiskBadgeColor(riskScore: number): string {
   if (riskScore < 30) {
@@ -31,8 +30,15 @@ export default function Home() {
         RiskChain Intelligence
       </h1>
       
-      {/* Claim Submission Form */}
-      <ClaimForm />
+      {/* Embedded Claim Submission Form from Backend */}
+      <div className="mb-8">
+        <iframe
+          src="http://localhost:8000/"
+          className="w-full border-0 rounded-lg shadow-lg"
+          style={{ minHeight: "1200px", height: "auto" }}
+          title="Insurance Claim Submission Form"
+        />
+      </div>
       
       <h2 className="mb-6 text-2xl font-bold text-slate-900 mt-8">
         Incoming Claims
