@@ -10,9 +10,11 @@ ENV/
 .venv
 
 # Database
-*.db
+# *.db  # Commented out to allow riskchain.db to be tracked
 *.sqlite
 *.sqlite3
+# Allow specific database file
+!backend/riskchain.db
 
 # IDE
 .vscode/
