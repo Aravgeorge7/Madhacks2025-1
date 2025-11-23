@@ -807,4 +807,9 @@ async def get_stats(db: Session = Depends(get_db)):
         },
         "graph_stats": graph_stats
     }
+@app.get("/api/graph/{claim_id}")
+async def get_claim_graph(claim_id: str):
+    """Get the network graph (subgraph) for a specific claim."""
+    # Get 2 hops of connections (Claim -> Doctor -> Other Claims)
+    return risk_graph.get_claim_subgraph(claim_id, hops=2)
 
