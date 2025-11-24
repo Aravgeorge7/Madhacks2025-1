@@ -96,7 +96,7 @@ class RiskGraph:
         - +25 points: IP address degree > 2 (shared location)
         - +15 points: Lawyer node degree > 3 (suspicious pattern)
         - +10 points: Missing required documents
-        - +10 points: Based on fraud_nlp_score (0-20 scaled to 0-10)
+        - +0-20 points: Based on fraud_nlp_score (0-20, direct contribution)
         
         Args:
             claim_dict: Dictionary containing claim information
@@ -138,12 +138,12 @@ class RiskGraph:
         if missing_docs and len(missing_docs) > 0:
             score += 10
         
-        # Add NLP-based fraud score (scale 0-20 to 0-10)
-        if fraud_nlp_score:
-            nlp_contribution = min(10, int(fraud_nlp_score / 2))
-            score += nlp_contribution
+        # Add AI-based fraud score (0-20 points, direct contribution)
+        # The AI returns a score of 0-20, which is a significant but fair penalty
+        nlp_contribution = fraud_nlp_score
+        score += nlp_contribution
         
-        # Cap score at 100
+        # Return the raw sum of risk factors, capped at 100
         return min(100, score)
     
     def process_claim(self, claim_dict: Dict[str, Any]) -> Dict[str, Any]:

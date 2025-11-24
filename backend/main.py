@@ -14,6 +14,7 @@ from database import init_db, get_db, Claim
 from models import ClaimFormData, ClaimResponse
 from graph_service import RiskGraph
 from model_service import get_model_service
+from ai_service import analyze_claim_text
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -760,9 +761,47 @@ async def create_claim(
         # Generate unique claim ID if not provided
         claim_id = claim_data.claim_id or f"C{str(uuid.uuid4())[:8].upper()}"
         
-        # Convert form data to JSON
-        claim_json = claim_data.model_dump()
+        # Calculate previous claims count automatically if not provided
+        # Query database for claims by same claimant_name or policy_number
+        previous_claims_count = claim_data.previous_claims_count
+        if previous_claims_count is None or previous_claims_count == 0:
+            # Count existing claims by same claimant name or policy number
+            claimant_name = claim_data.claimant_name
+            policy_number = claim_data.policy_number
+            
+            count_query = db.query(Claim)
+            if claimant_name:
+                count_query = count_query.filter(Claim.claimant_name == claimant_name)
+            elif policy_number:
+                count_query = count_query.filter(Claim.policy_number == policy_number)
+            else:
+                count_query = None
+            
+            if count_query:
+                previous_claims_count = count_query.count()
+            else:
+                previous_claims_count = 0
         
+        # Convert form data to JSON and update with calculated previous_claims_count
+        claim_json = claim_data.model_dump()
+        claim_json["previous_claims_count"] = previous_claims_count
+        
+        # AI Analysis: Use GPT-4o-mini for consistency checking and fraud detection
+        # This analyzes the description against metadata and detects inconsistencies
+        ai_analysis = analyze_claim_text(claim_data)
+        fraud_nlp_score = ai_analysis.get("fraud_nlp_score", 0)
+        consistency_flags = ai_analysis.get("consistency_flags", [])
+        analysis_summary = ai_analysis.get("analysis_summary", "")
+        
+        # Log AI analysis results
+        if consistency_flags:
+            print(f"🔍 AI Consistency Check: Found {len(consistency_flags)} inconsistency flags")
+            for flag in consistency_flags:
+                print(f"   ⚠️  {flag}")
+        if analysis_summary:
+            print(f"📊 AI Analysis Summary: {analysis_summary}")
+        print(f"🎯 AI Fraud NLP Score: {fraud_nlp_score}/20")
+
         # Prepare data for graph processing (use new field names)
         # Generate unique IP if not provided to avoid false fraud ring detection
         import hashlib
@@ -772,6 +811,13 @@ async def create_claim(
             ip_hash = hashlib.md5(claim_id.encode()).hexdigest()[:8]
             unique_ip = f"10.{int(ip_hash[:2], 16) % 256}.{int(ip_hash[2:4], 16) % 256}.{int(ip_hash[4:6], 16) % 256}"
 
+        # Get accident description for graph processing
+        accident_description = (
+            claim_data.accident_description or 
+            claim_data.description or 
+            ""
+        )
+
         graph_claim_data = {
             "claim_id": claim_id,
             "claimant_name": claim_data.claimant_name or f"{claim_data.claimant_city or 'Unknown'} Claimant",
@@ -779,8 +825,31 @@ async def create_claim(
             "lawyer": claim_data.lawyer_name or claim_data.lawyer or "None",
             "ip_address": unique_ip,
             "missing_docs": [] if claim_data.police_report_filed else ['police_report'],
-            "fraud_nlp_score": 0  # Will be updated when AI processing is added
+            "fraud_nlp_score": fraud_nlp_score,  # Set based on AI analysis
+            "accident_description": accident_description,  # Pass description for graph processing
+            "description": accident_description  # Also pass as description for compatibility
         }
+        
+        # Calculate previous claims count automatically if not provided
+        # Query database for claims by same claimant_name or policy_number
+        previous_claims_count = claim_data.previous_claims_count
+        if previous_claims_count is None or previous_claims_count == 0:
+            # Count existing claims by same claimant name or policy number
+            claimant_name = claim_data.claimant_name
+            policy_number = claim_data.policy_number
+            
+            count_query = db.query(Claim)
+            if claimant_name:
+                count_query = count_query.filter(Claim.claimant_name == claimant_name)
+            elif policy_number:
+                count_query = count_query.filter(Claim.policy_number == policy_number)
+            else:
+                count_query = None
+            
+            if count_query:
+                previous_claims_count = count_query.count()
+            else:
+                previous_claims_count = 0
         
         # Process claim through graph service
         graph_result = risk_graph.process_claim(graph_claim_data)
@@ -830,7 +899,7 @@ async def create_claim(
             coverage_type=claim_data.coverage_type,
             policy_type=claim_data.policy_type,
             deductible_amount=claim_data.deductible_amount,
-            previous_claims_count=claim_data.previous_claims_count or 0,
+            previous_claims_count=previous_claims_count,
             lawyer_name=claim_data.lawyer_name,
             medical_provider_name=claim_data.medical_provider_name,
             repair_shop_name=claim_data.repair_shop_name,

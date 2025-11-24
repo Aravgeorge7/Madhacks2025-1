@@ -109,12 +109,40 @@ def import_csv_data(csv_file_path: str, limit: int = None):
     try:
         with open(csv_file_path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
-            total_rows = 0
-            imported = 0
-            errors = 0
+            csv_columns = reader.fieldnames
+            
+            # Expected columns (for validation)
+            expected_columns = [
+                'claim_id', 'policy_number', 'claim_submission_date', 'accident_date',
+                'accident_time', 'accident_location_city', 'accident_location_state',
+                'accident_description', 'police_report_filed', 'loss_type',
+                'claimant_age', 'claimant_gender', 'claimant_city', 'claimant_state',
+                'vehicle_make', 'vehicle_model', 'vehicle_year', 'vehicle_use_type',
+                'vehicle_mileage', 'damage_severity', 'injury_severity',
+                'medical_treatment_received', 'medical_cost_estimate', 'airbags_deployed',
+                'policy_tenure_months', 'coverage_type', 'policy_type', 'deductible_amount',
+                'previous_claims_count', 'lawyer_name', 'medical_provider_name',
+                'repair_shop_name', 'reported_by', 'status', 'fraud_label', 'photos'
+            ]
+            
+            # Check for missing columns
+            missing_columns = [col for col in expected_columns if col not in csv_columns]
+            extra_columns = [col for col in csv_columns if col not in expected_columns]
             
             print(f"Starting import from {csv_file_path}...")
             print("=" * 80)
+            print(f"CSV Columns Found: {len(csv_columns)}")
+            print(f"  Columns: {', '.join(csv_columns[:10])}{'...' if len(csv_columns) > 10 else ''}")
+            
+            if missing_columns:
+                print(f"⚠️  Warning: Missing expected columns: {missing_columns}")
+            if extra_columns:
+                print(f"ℹ️  Info: Extra columns found: {extra_columns}")
+            print("=" * 80)
+            
+            total_rows = 0
+            imported = 0
+            errors = 0
             
             for row_num, row in enumerate(reader, 1):
                 if limit and row_num > limit:
@@ -254,7 +282,7 @@ def import_csv_data(csv_file_path: str, limit: int = None):
 if __name__ == "__main__":
     import sys
     
-    csv_file = sys.argv[1] if len(sys.argv) > 1 else "car_insurance_training_dataset_with_images.csv"
+    csv_file = sys.argv[1] if len(sys.argv) > 1 else "testing2.csv"
     limit = int(sys.argv[2]) if len(sys.argv) > 2 else None
     
     # Initialize database

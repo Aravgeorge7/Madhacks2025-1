@@ -134,6 +134,30 @@ class ModelService:
             # Convert claim to model format
             model_claim = self._convert_claim_for_model(claim)
             
+            # 🚀 DEMO MODE: Check for high-risk trigger phrases in description
+            # These automatically boost AI score (model_score) to 50 as baseline
+            accident_description = (
+                model_claim.get("accident_description", "") or 
+                claim.get("accident_description", "") or 
+                claim.get("description", "") or 
+                ""
+            ).lower()
+            
+            has_trigger = False
+            trigger_detected = None
+            
+            # Check for "give me money" trigger
+            if "give me money" in accident_description:
+                has_trigger = True
+                trigger_detected = "give me money"
+                print(f"🚨 DEMO TRIGGER (Model): 'give me money' detected → AI score baseline set to 50")
+            
+            # Check for "..." at end of sentences
+            if accident_description.strip().endswith("...") or "..." in accident_description:
+                has_trigger = True
+                trigger_detected = "trailing ellipsis (...)"
+                print(f"🚨 DEMO TRIGGER (Model): '...' detected → AI score baseline set to 50")
+            
             # Get model prediction
             if self.model and self.model.model:
                 try:
@@ -143,16 +167,25 @@ class ModelService:
                     
                     model_scores = self.model.predict_proba([model_claim], graph_engine=self.graph_engine)
                     model_score = float(model_scores[0]) if model_scores and len(model_scores) > 0 else 0.5
+                    
+                    # 🚀 DEMO MODE: Boost AI score to 50 baseline if trigger detected
+                    if has_trigger:
+                        # Ensure model_score * 100 >= 50, so model_score >= 0.5
+                        model_score = max(0.5, model_score)
+                        # Add extra boost for triggers (make it more dramatic)
+                        model_score = min(1.0, model_score * 1.2)  # Boost by 20% but cap at 1.0
+                    
                     # Debug: print first few claim fields to verify they're different
-                    print(f"Model prediction for {model_claim.get('claim_id')}: {model_score:.4f} ({model_score*100:.2f}%) - age={model_claim.get('claimant_age')}, prev={model_claim.get('previous_claims_count')}, vehicle={model_claim.get('vehicle_make')} {model_claim.get('vehicle_year')}, provider={model_claim.get('medical_provider_name')[:15] if model_claim.get('medical_provider_name') and model_claim.get('medical_provider_name') != 'unknown' else 'None'}")
+                    trigger_note = f" [TRIGGER: {trigger_detected}]" if has_trigger else ""
+                    print(f"Model prediction for {model_claim.get('claim_id')}: {model_score:.4f} ({model_score*100:.2f}%){trigger_note} - age={model_claim.get('claimant_age')}, prev={model_claim.get('previous_claims_count')}, vehicle={model_claim.get('vehicle_make')} {model_claim.get('vehicle_year')}, provider={model_claim.get('medical_provider_name')[:15] if model_claim.get('medical_provider_name') and model_claim.get('medical_provider_name') != 'unknown' else 'None'}")
                 except Exception as pred_error:
                     print(f"Error in model prediction: {pred_error}")
                     import traceback
                     traceback.print_exc()
-                    model_score = 0.5
+                    model_score = 0.5 if not has_trigger else 0.6  # Higher baseline if trigger detected
             else:
                 print(f"Warning: Model not available for claim {model_claim.get('claim_id')}")
-                model_score = 0.5
+                model_score = 0.5 if not has_trigger else 0.6  # Higher baseline if trigger detected
             
             # Get graph features and risk
             graph_risk = 0.0
@@ -197,6 +230,27 @@ class ModelService:
             model_contribution = model_score * 70
             graph_contribution = (graph_risk / 30.0) * 20 if graph_risk > 0 else 0
             final_score = min(100.0, model_contribution + graph_contribution + rule_adj)
+            
+            # 🚀 DEMO MODE: Boost for excessive previous claims (>3)
+            # Add 20 points for each claim above 3 to both risk score and AI score
+            previous_claims_count = model_claim.get("previous_claims_count", 0) or 0
+            if previous_claims_count > 3:
+                extra_claims = previous_claims_count - 3
+                claims_boost = extra_claims * 20
+                final_score = min(100.0, final_score + claims_boost)
+                # Also boost AI score (model_score) - add 20 points per extra claim
+                # Convert boost to probability: 20 points = 0.2 probability
+                ai_boost = min(1.0, model_score + (claims_boost / 100.0))
+                model_score = ai_boost
+                # Recalculate model contribution with boosted score
+                model_contribution = model_score * 70
+                final_score = min(100.0, model_contribution + graph_contribution + rule_adj)
+                print(f"🚀 DEMO MODE (Model): Previous claims boost: {previous_claims_count} claims ({extra_claims} extra) → +{claims_boost} points to risk score and AI score")
+            
+            # 🚀 DEMO MODE: Ensure risk score is at least 50 if trigger detected
+            if has_trigger:
+                final_score = max(50.0, final_score)
+                print(f"🚀 DEMO MODE (Model): Final risk score boosted to {final_score:.2f} (trigger: {trigger_detected})")
             
             # Determine risk category
             if final_score >= 70:
